@@ -77,6 +77,18 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
     train_X = np.genfromtxt(x_file,delimiter='\t')#[0:20000,:]
     #print("TX:",train_X)
     train_X = train_X[:,[4,5,6,8,10,12]]
+    print("Train X means")
+    print(train_X.mean(axis=0))
+    print(train_X.mean(axis=0).shape)
+    print("Train X Std")
+    print(train_X.std(axis=0))
+    train_X = np.subtract(train_X,train_X.mean(axis=0))
+    print("Subtracted: " , train_X)
+    train_X = np.divide(train_X,train_X.std(axis=0))
+    print("Divided: " , train_X)
+
+
+
     #print("TX:",train_X[:,[4,5,6,8,10,12]])
     
     train_Y = np.genfromtxt(y_file,delimiter='\t')#[0:20000,:]
@@ -101,6 +113,13 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
     #newY = np.reshape(my_Y,(-1,,train_Y.shape[1])).astype(np.int64)
     print("My X: " , newX)
     print("My Y: " , my_Y)
+    #Now normalize it. #Fine the mean value, subtract it. Find the std of all numbers, and divide by it.
+
+
+
+
+
+
     #Now, the X 
     #Now X should be split into groups of 100. We should ignore the first 25%, the last 25%, then take the middle and split it up.
     #for ele in train_Y:

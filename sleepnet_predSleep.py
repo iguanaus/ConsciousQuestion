@@ -9,6 +9,8 @@ from sklearn.model_selection import train_test_split
 import os
 import time
 import argparse, os
+from tensorflow.contrib.rnn import BasicLSTMCell, BasicRNNCell, GRUCell
+
 
 RANDOM_SEED = 42
 tf.set_random_seed(RANDOM_SEED)
@@ -64,109 +66,145 @@ def forwardprop(X, weights, biases, num_layers,dropout=False):
 #b b b b b       4 4 4 4 4
 #c c c c c       5 5 5 5 5
 
-def get_data(data,percentTest=.2,random_state=42):
+def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
+    data = 'data/snip'
     x_file = data+"_data.csv"
     y_file = data+"_lables.csv"
     print("Train X: " , np.genfromtxt(x_file,delimiter='\t'))
+
     print(np.genfromtxt(x_file,delimiter='\t').shape)
     print(np.genfromtxt(y_file,delimiter='\t').shape)
-
-    
     train_X = np.genfromtxt(x_file,delimiter='\t')#[0:20000,:]
-    print(train_X)
+    #print("TX:",train_X)
+    train_X = train_X[:,[4,5,6,8,10,12]]
+    #print("TX:",train_X[:,[4,5,6,8,10,12]])
+    
     train_Y = np.genfromtxt(y_file,delimiter='\t')#[0:20000,:]
     #B = np.reshape(A, (-1, 2))
-    train_Y = np.reshape(train_Y,(-1,1))
-    print(train_Y)
-    #Now, the X 
+    print("Train Y 3: " , train_Y[0::sampling_rate])
+    train_Y = train_Y#np.reshape(train_Y,(-1,1))
+    print("Train Y 2: " , train_Y)
 
+    lowBar = int(train_X.shape[0]*0.0)
+    highBar = int(train_X.shape[0]*1.0)
+
+    print(train_X)
+    my_X = train_X[lowBar:highBar,:]
+    newX = np.reshape(my_X,(-1,sampling_rate,train_X.shape[1]))
+    my_Y = train_Y[lowBar:highBar]
+    my_Y = my_Y[0::sampling_rate].astype('int64')
+    #Fixes the 0 indexing
+    my_Y = np.subtract(my_Y,1)
+
+    #newY = np.reshape(my_Y,(-1,100))
+
+    #newY = np.reshape(my_Y,(-1,,train_Y.shape[1])).astype(np.int64)
+    print("My X: " , newX)
+    print("My Y: " , my_Y)
+    #Now, the X 
+    #Now X should be split into groups of 100. We should ignore the first 25%, the last 25%, then take the middle and split it up.
     #for ele in train_Y:
     #    print len(ele)
     #    print ele
-    X_train, X_val, y_train, y_val = train_test_split(train_X,train_Y,test_size=percentTest,random_state=random_state)
+    X_train, X_val, y_train, y_val = train_test_split(newX,my_Y,test_size=percentTest,random_state=random_state)
     return X_train, y_train, X_val, y_val
 
 def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_batch,numEpochs,lr_rate,lr_decay,num_layers,n_hidden,percent_val):
 
+    n_steps = 200
+
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    train_X, train_Y , val_X, val_Y = get_data(data,percentTest=percent_val)
+    train_X, train_Y , val_X, val_Y = get_data(data,percentTest=percent_val,sampling_rate=n_steps)
 
-    x_size = train_X.shape[1]
+    x_size = train_X.shape[2]
     print("X Size: " , x_size)
-    n_steps = 100
-    y_size = train_Y.shape[1]
+    n_hidden = 100
+    n_classes = 2
+    num_layers = 3
+    #y_size = train_Y.shape[2]
+    lr_rate = 0.001
+    lr_rate_decay = .99
+    n_iter = 10000
 
     # Symbols
-    X = tf.placeholder("float", shape=[None, n_steps,x_size])
+    x = tf.placeholder("float", shape=[None, n_steps,x_size])
     y = tf.placeholder("int64", shape=[None])
     weights = []
     biases = []
     # Weight initializations
-    if reuse_weights:
-        (weights, biases) = load_weights(output_folder,weight_name_load,num_layers)
 
-    else:
-        for i in xrange(0,num_layers):
-            if i ==0:
-                weights.append(init_weights((x_size,n_hidden)))
-            else:
-                weights.append(init_weights((n_hidden,n_hidden)))
-            biases.append(init_bias(n_hidden))
-        weights.append(init_weights((n_hidden,y_size)))
-        biases.append(init_bias(y_size))
-    # Forward propagation
-    yhat    = forwardprop(X, weights,biases,num_layers)
+    cell = BasicLSTMCell(n_hidden, state_is_tuple=True, forget_bias=1)
+
+    cells = tf.contrib.rnn.MultiRNNCell([BasicLSTMCell(n_hidden, state_is_tuple=True, forget_bias =1) for _ in range(num_layers)],state_is_tuple=True)
+
+    hidden_out, states = tf.nn.dynamic_rnn(cells, x, dtype=tf.float32)
+
+
+    V_init_val = np.sqrt(6.)/np.sqrt(200)
+
+    V_weights = tf.get_variable("V_weights", shape = [n_hidden, n_classes], \
+            dtype=tf.float32, initializer=tf.random_uniform_initializer(-V_init_val, V_init_val))
+    V_bias = tf.get_variable("V_bias", shape=[n_classes], \
+            dtype=tf.float32, initializer=tf.constant_initializer(0.01))
+
+
+    hidden_out_list = tf.unstack(hidden_out, axis=1)[-1]
+    final_hidden = tf.matmul(hidden_out_list, V_weights)
+    output_data = tf.nn.bias_add(final_hidden, V_bias)
+
+
+    cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=output_data, labels=y))
+    correct_pred = tf.equal(tf.argmax(output_data, 1), y)
+    accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
     
-    # Backward propagation
-    cost = tf.reduce_sum(tf.square(y-yhat))
-    global_step = tf.Variable(0, trainable=False)
-    learning_rate = tf.train.exponential_decay(lr_rate,global_step,num_decay,.96,staircase=False)
+    optimizer = tf.train.RMSPropOptimizer(learning_rate=lr_rate, decay=lr_rate_decay).minimize(cost)
+    init = tf.global_variables_initializer()
+    
+    step4 = time.time()
+    steps = []
+    losses = []
+    accs = []
 
-    optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=lr_decay).minimize(cost,global_step=global_step)
 
-    with tf.Session() as sess:
-        init = tf.global_variables_initializer()
+    with tf.Session(config=tf.ConfigProto(log_device_placement=False,allow_soft_placement=False)) as sess:
+        print("Session Created")
+    
         sess.run(init)
+
+        step5 = time.time()
+        print("-- Initialization: " + str(step5 - step4))
         step = 0
-        curEpoch=0
-        cum_loss = 0
-        numFile = 0 
-        while True:
-            train_file_name = output_folder+"train_train_loss_" + str(numFile) + ".txt"
-            if os.path.isfile(train_file_name):
-                numFile += 1
-            else:
-                break
-        train_loss_file = open(train_file_name,'w')
-        val_loss_file = open(output_folder+"train_val_loss_"+str(numFile) + "_val.txt",'w')
-        start_time=time.time()
-        print("========                         Iterations started                  ========")
-        while curEpoch < numEpochs:
+        epoch_num = 0.0
+        n_batch = 2
+        print ("Shape:", train_X.shape)
+
+        while step < n_iter:
+
+            #if (step > )
+            #print("TrainX: " , train_X)
+            #print("TrainY: " , train_Y)
             batch_x = train_X[step * n_batch : (step+1) * n_batch]
             batch_y = train_Y[step * n_batch : (step+1) * n_batch]
-            myvals0 = sess.run(yhat,feed_dict={X:batch_x,y:batch_y})
-            print(myvals0)
-            print(batch_y)
-            sess.run(optimizer, feed_dict={X: batch_x, y: batch_y})
-            cum_loss += sess.run(cost,feed_dict={X:batch_x,y:batch_y})
-            step += 1
-            if step == int(train_X.shape[0]/n_batch): #Epoch finished
-                step = 0
-                curEpoch +=1            
-                train_loss_file.write(str(float(cum_loss))+str("\n"))
-                if (curEpoch % 10 == 0 or curEpoch == 1):
-                    #Calculate the validation loss
-                    val_loss = sess.run(cost,feed_dict={X:val_X,y:val_Y})
-                    print("Validation loss: " , str(val_loss))
-                    val_loss_file.write(str(float(val_loss))+str("\n"))
-                    val_loss_file.flush()
+            #print("Batch X: " , batch_x)
+            #print("Batch X: " , batch_x)
+            #print("Batch Y: " , batch_y)
+            #batch_x, batch_y = mnist_data(mnist, n_batch, ind, "train")
+            loss = sess.run(cost,feed_dict={x:batch_x,y:batch_y})
+            acc = sess.run(accuracy,feed_dict={x:batch_x,y:batch_y})
 
-                    print("Epoch: " + str(curEpoch+1) + " : Loss: " + str(cum_loss))
-                    train_loss_file.flush()
-                cum_loss = 0
-        save_weights(weights,biases,output_folder,weight_name_save,num_layers)
+            sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
+            #epoch_num  = float(n_batch)/55000.0*step
+            step += 1
+            if step == 8:
+                step = 0
+                epoch_num += 1.0
+            #if step % 3 == 0:
+            print("Epoch: " + str(epoch_num) + " Iter: " + str(step) + ", Minibatch Loss= " + \
+                  "{:.6f}".format(loss) + ", Training Accuracy= " + \
+                  "{:.5f}".format(acc))
+
     print "========Iterations completed in : " + str(time.time()-start_time) + " ========"
     sess.close()
 

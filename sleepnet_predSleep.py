@@ -130,6 +130,7 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
 
 def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_batch,numEpochs,lr_rate,lr_decay,num_layers,n_hidden,percent_val):
 
+    f = open("loss.csv",'w')
     n_steps = 100
 
     if not os.path.exists(output_folder):
@@ -197,7 +198,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
         print("-- Initialization: " + str(step5 - step4))
         step = 0
         epoch_num = 0.0
-        n_batch = 2
+        n_batch = 4
         print ("Shape:", train_X.shape)
         cum_loss = 0
 
@@ -217,13 +218,19 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
             sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
             #epoch_num  = float(n_batch)/55000.0*step
             step += 1
-            if step == 800:
+            if step == 40:
                 step = 0
                 epoch_num += 1.0
+		print("Epoch: " , epoch_num, " loss=", cum_loss)
+                f.write(str(cum_loss))
+		f.write("\n")
+		f.flush()
+		cum_loss = 0
             if step % 5 == 0:
                 loss = sess.run(cost,feed_dict={x:batch_x,y:batch_y})
                 acc = sess.run(accuracy,feed_dict={x:batch_x,y:batch_y})
-                print("Epoch: " + str(epoch_num) + " Iter: " + str(step) + ", Minibatch Loss= " + \
+                cum_loss += loss
+		print("Epoch: " + str(epoch_num) + " Iter: " + str(step) + ", Minibatch Loss= " + \
                   "{:.6f}".format(loss) + ", Training Accuracy= " + \
                   "{:.5f}".format(acc))
 

@@ -114,12 +114,6 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
     print("My X: " , newX)
     print("My Y: " , my_Y)
     #Now normalize it. #Fine the mean value, subtract it. Find the std of all numbers, and divide by it.
-
-
-
-
-
-
     #Now, the X 
     #Now X should be split into groups of 100. We should ignore the first 25%, the last 25%, then take the middle and split it up.
     #for ele in train_Y:
@@ -147,7 +141,8 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
     lr_rate = 0.001
     lr_rate_decay = .99
     n_iter = 10000
-    maxVal = 800
+    n_batch = 4
+    maxVal = train_X.shape[0]/n_batch
 
     # Symbols
     x = tf.placeholder("float", shape=[None, n_steps,x_size])
@@ -198,7 +193,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
         print("-- Initialization: " + str(step5 - step4))
         step = 0
         epoch_num = 0.0
-        n_batch = 4
+        #n_batch = 4
         print ("Shape:", train_X.shape)
         cum_loss = 0
 
@@ -207,6 +202,9 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
             #if (step > )
             #print("TrainX: " , train_X)
             #print("TrainY: " , train_Y)
+            #print("Pulling from : " , step* n_batch, " to ", (step+1)*n_batch)
+            #print("Shape is: " , train_X.shape)
+            #print("Y Shape is: " , train_Y.shape)
             batch_x = train_X[step * n_batch : (step+1) * n_batch]
             batch_y = train_Y[step * n_batch : (step+1) * n_batch]
             #print("Batch X: " , batch_x)
@@ -218,7 +216,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
             sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
             #epoch_num  = float(n_batch)/55000.0*step
             step += 1
-            if step == 40:
+            if step == maxVal:
                 step = 0
                 epoch_num += 1.0
 		print("Epoch: " , epoch_num, " loss=", cum_loss)

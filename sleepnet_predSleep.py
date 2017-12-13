@@ -130,7 +130,7 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
 
 def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_batch,numEpochs,lr_rate,lr_decay,num_layers,n_hidden,percent_val):
 
-    n_steps = 200
+    n_steps = 100
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -146,6 +146,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
     lr_rate = 0.001
     lr_rate_decay = .99
     n_iter = 10000
+    maxVal = 800
 
     # Symbols
     x = tf.placeholder("float", shape=[None, n_steps,x_size])
@@ -198,6 +199,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
         epoch_num = 0.0
         n_batch = 2
         print ("Shape:", train_X.shape)
+        cum_loss = 0
 
         while step < n_iter:
 
@@ -210,17 +212,18 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
             #print("Batch X: " , batch_x)
             #print("Batch Y: " , batch_y)
             #batch_x, batch_y = mnist_data(mnist, n_batch, ind, "train")
-            loss = sess.run(cost,feed_dict={x:batch_x,y:batch_y})
-            acc = sess.run(accuracy,feed_dict={x:batch_x,y:batch_y})
+            
 
             sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
             #epoch_num  = float(n_batch)/55000.0*step
             step += 1
-            if step == 8:
+            if step == 800:
                 step = 0
                 epoch_num += 1.0
-            #if step % 3 == 0:
-            print("Epoch: " + str(epoch_num) + " Iter: " + str(step) + ", Minibatch Loss= " + \
+            if step % 5 == 0:
+                loss = sess.run(cost,feed_dict={x:batch_x,y:batch_y})
+                acc = sess.run(accuracy,feed_dict={x:batch_x,y:batch_y})
+                print("Epoch: " + str(epoch_num) + " Iter: " + str(step) + ", Minibatch Loss= " + \
                   "{:.6f}".format(loss) + ", Training Accuracy= " + \
                   "{:.5f}".format(acc))
 

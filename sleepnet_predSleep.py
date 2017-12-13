@@ -76,7 +76,9 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
     print(np.genfromtxt(y_file,delimiter='\t').shape)
     train_X = np.genfromtxt(x_file,delimiter='\t')#[0:20000,:]
     #print("TX:",train_X)
-    train_X = train_X[:,[4,5,6,8,10,12]]
+    #We don't need this right now. 
+    #train_X = train_X[:,[4,5,6,8,10,12]]
+    
     print("Train X means")
     print(train_X.mean(axis=0))
     print(train_X.mean(axis=0).shape)
@@ -140,8 +142,8 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
     #y_size = train_Y.shape[2]
     lr_rate = 0.001
     lr_rate_decay = .99
-    n_iter = 10000
-    n_batch = 4
+    n_iter = 100000
+    n_batch = 8
     maxVal = train_X.shape[0]/n_batch
 
     # Symbols
@@ -219,16 +221,18 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
             if step == maxVal:
                 step = 0
                 epoch_num += 1.0
-		print("Epoch: " , epoch_num, " loss=", cum_loss)
-                f.write(str(cum_loss))
-		f.write("\n")
-		f.flush()
-		cum_loss = 0
+                val_loss = sess.run(cost,feed_dict={X:val_X,y:val_Y})
+
+                print("Epoch: " , epoch_num, " loss=", cum_loss, " val loss: " , val_loss)
+                f.write(str(cum_loss)+"," + str(val_loss))
+                f.write("\n")
+                f.flush()
+                cum_loss = 0
             if step % 5 == 0:
                 loss = sess.run(cost,feed_dict={x:batch_x,y:batch_y})
                 acc = sess.run(accuracy,feed_dict={x:batch_x,y:batch_y})
                 cum_loss += loss
-		print("Epoch: " + str(epoch_num) + " Iter: " + str(step) + ", Minibatch Loss= " + \
+                print("Epoch: " + str(epoch_num) + " Iter: " + str(step) + ", Minibatch Loss= " + \
                   "{:.6f}".format(loss) + ", Training Accuracy= " + \
                   "{:.5f}".format(acc))
 

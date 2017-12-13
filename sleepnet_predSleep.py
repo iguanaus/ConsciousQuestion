@@ -221,7 +221,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
             if step == maxVal:
                 step = 0
                 epoch_num += 1.0
-                val_loss = sess.run(cost,feed_dict={X:val_X,y:val_Y})
+                val_loss = sess.run(cost,feed_dict={x:val_X,y:val_Y})
 
                 print("Epoch: " , epoch_num, " loss=", cum_loss, " val loss: " , val_loss)
                 f.write(str(cum_loss)+"," + str(val_loss))

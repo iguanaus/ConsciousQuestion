@@ -100,7 +100,7 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
     print("Train Y 2: " , train_Y)
 
     lowBar = int(train_X.shape[0]*0.0)
-    highBar = int(train_X.shape[0]*.10)
+    highBar = int(train_X.shape[0]*1.0)
 
     print(train_X)
     my_X = train_X[lowBar:highBar,:]
@@ -124,7 +124,7 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
     X_train, X_val, y_train, y_val = train_test_split(newX,my_Y,test_size=percentTest,random_state=random_state)
     return X_train, y_train, X_val, y_val
 
-def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_batch,numEpochs,lr_rate,lr_decay,num_layers,n_hidden,percent_val):
+def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_batch,numEpochs,lr_rate,lr_decay_rate,num_layers,n_hidden,percent_val,n_steps,n_iter):
 
     f = open("loss.csv",'w')
     n_steps = 100
@@ -133,14 +133,14 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
 
     x_size = train_X.shape[2]
     print("X Size: " , x_size)
-    n_hidden = 100
+    #n_hidden = 100
     n_classes = 2
-    num_layers = 3
+    #num_layers = 3
     #y_size = train_Y.shape[2]
-    lr_rate = 0.001
-    lr_rate_decay = .99
-    n_iter = 100000
-    n_batch = 8
+    #lr_rate = 0.001
+    #lr_rate_decay = .99
+    #n_iter = 100000
+    #n_batch = 8
     maxVal = train_X.shape[0]/n_batch
 
     # Symbols
@@ -174,7 +174,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
     correct_pred = tf.equal(tf.argmax(output_data, 1), y)
     accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
     
-    optimizer = tf.train.RMSPropOptimizer(learning_rate=lr_rate, decay=lr_rate_decay).minimize(cost)
+    optimizer = tf.train.RMSPropOptimizer(learning_rate=lr_rate, decay=lr_decay_rate).minimize(cost)
     init = tf.global_variables_initializer()
     
     step4 = time.time()
@@ -248,13 +248,15 @@ if __name__=="__main__":
         #Generate the loss file/val file name by looking to see if there is a previous one, then creating/running it.
     parser.add_argument("--weight_name_load",type=str,default="")#This would be something that goes infront of w_1.txt. This would be used in saving the weights
     parser.add_argument("--weight_name_save",type=str,default="")
-    parser.add_argument("--n_batch",type=int,default=10)
+    parser.add_argument("--n_batch",type=int,default=20)
     parser.add_argument("--numEpochs",type=int,default=2000)
-    parser.add_argument("--lr_rate",default=.1)
-    parser.add_argument("--lr_decay",default=.9)
-    parser.add_argument("--num_layers",default=4)
-    parser.add_argument("--n_hidden",default=75)
+    parser.add_argument("--lr_rate",default=.001)
+    parser.add_argument("--lr_decay_rate",default=.99)
+    parser.add_argument("--num_layers",default=2)
+    parser.add_argument("--n_hidden",default=100)
     parser.add_argument("--percent_val",default=.2)
+    parser.add_argument("--n_steps",default=100)
+    parser.add_argument("--n_iter",default=100000)
 
     args = parser.parse_args()
     dict = vars(args)
@@ -274,10 +276,12 @@ if __name__=="__main__":
             'n_batch':dict['n_batch'],
             'numEpochs':dict['numEpochs'],
             'lr_rate':dict['lr_rate'],
-            'lr_decay':dict['lr_decay'],
+            'lr_decay_rate':dict['lr_decay_rate'],
             'num_layers':dict['num_layers'],
             'n_hidden':dict['n_hidden'],
-            'percent_val':dict['percent_val']
+            'percent_val':dict['percent_val'],
+            'n_steps':dict['n_steps'],
+            'n_iter':dict['n_iter']
             }
 
     main(**kwargs)

@@ -2,3 +2,4 @@
 *.txt
 data/
 results/
+*.key

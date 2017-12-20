@@ -1,0 +1,1 @@
+scp p2Cal2:/home/ubuntu/ConsciousQuestion/loss.csv loss_moredata_2_25.csv

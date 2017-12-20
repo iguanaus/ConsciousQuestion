@@ -67,7 +67,7 @@ def forwardprop(X, weights, biases, num_layers,dropout=False):
 #c c c c c       5 5 5 5 5
 
 def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
-    data = 'data/snip'
+    #data = 'data/snip'
     x_file = data+"_data.csv"
     y_file = data+"_lables.csv"
     print("Train X: " , np.genfromtxt(x_file,delimiter='\t'))
@@ -100,7 +100,7 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
     print("Train Y 2: " , train_Y)
 
     lowBar = int(train_X.shape[0]*0.0)
-    highBar = int(train_X.shape[0]*1.0)
+    highBar = int(train_X.shape[0]*.10)
 
     print(train_X)
     my_X = train_X[lowBar:highBar,:]
@@ -129,9 +129,6 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
     f = open("loss.csv",'w')
     n_steps = 100
 
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-
     train_X, train_Y , val_X, val_Y = get_data(data,percentTest=percent_val,sampling_rate=n_steps)
 
     x_size = train_X.shape[2]
@@ -149,8 +146,8 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
     # Symbols
     x = tf.placeholder("float", shape=[None, n_steps,x_size])
     y = tf.placeholder("int64", shape=[None])
-    weights = []
-    biases = []
+
+    
     # Weight initializations
 
     cell = BasicLSTMCell(n_hidden, state_is_tuple=True, forget_bias=1)
@@ -185,11 +182,18 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
     losses = []
     accs = []
 
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    saver = tf.train.Saver()
+
 
     with tf.Session(config=tf.ConfigProto(log_device_placement=False,allow_soft_placement=False)) as sess:
         print("Session Created")
     
         sess.run(init)
+        if reuse_weights:
+            new_saver = tf.train.import_meta_graph(output_folder+"modelFile"+'.meta')
+            new_saver.restore(sess, tf.train.latest_checkpoint(output_folder))
 
         step5 = time.time()
         print("-- Initialization: " + str(step5 - step4))
@@ -200,20 +204,9 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
         cum_loss = 0
 
         while step < n_iter:
-
-            #if (step > )
-            #print("TrainX: " , train_X)
-            #print("TrainY: " , train_Y)
-            #print("Pulling from : " , step* n_batch, " to ", (step+1)*n_batch)
-            #print("Shape is: " , train_X.shape)
-            #print("Y Shape is: " , train_Y.shape)
-            batch_x = train_X[step * n_batch : (step+1) * n_batch]
-            batch_y = train_Y[step * n_batch : (step+1) * n_batch]
-            #print("Batch X: " , batch_x)
-            #print("Batch X: " , batch_x)
-            #print("Batch Y: " , batch_y)
-            #batch_x, batch_y = mnist_data(mnist, n_batch, ind, "train")
             
+            batch_x = train_X[step * n_batch : (step+1) * n_batch]
+            batch_y = train_Y[step * n_batch : (step+1) * n_batch]            
 
             sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
             #epoch_num  = float(n_batch)/55000.0*step
@@ -221,13 +214,17 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
             if step == maxVal:
                 step = 0
                 epoch_num += 1.0
-                val_loss = sess.run(cost,feed_dict={x:val_X,y:val_Y})
+                acc, val_loss = sess.run([accuracy,cost],feed_dict={x:val_X,y:val_Y})
 
-                print("Epoch: " , epoch_num, " loss=", cum_loss, " val loss: " , val_loss)
-                f.write(str(cum_loss)+"," + str(val_loss))
+
+                print("Epoch: " , epoch_num, " loss=", cum_loss, " val loss: " , val_loss, "accuracy", acc)
+                f.write(str(cum_loss)+"," + str(val_loss)+"," + str(acc))
                 f.write("\n")
                 f.flush()
                 cum_loss = 0
+                file_name_file = saver.save(sess,os.path.join(output_folder+"modelFile"))
+                print("Model saved in: " , file_name_file)
+                
             if step % 5 == 0:
                 loss = sess.run(cost,feed_dict={x:batch_x,y:batch_y})
                 acc = sess.run(accuracy,feed_dict={x:batch_x,y:batch_y})
@@ -235,6 +232,9 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
                 print("Epoch: " + str(epoch_num) + " Iter: " + str(step) + ", Minibatch Loss= " + \
                   "{:.6f}".format(loss) + ", Training Accuracy= " + \
                   "{:.5f}".format(acc))
+                
+                
+
 
     print "========Iterations completed in : " + str(time.time()-start_time) + " ========"
     sess.close()
@@ -243,8 +243,8 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(
         description="Physics Net Training")
     parser.add_argument("--data",type=str,default='data/snip')
-    parser.add_argument("--reuse_weights",type=str,default='False')
-    parser.add_argument("--output_folder",type=str,default='results/')
+    parser.add_argument("--reuse_weights",type=str,default='True')
+    parser.add_argument("--output_folder",type=str,default='results/Project_1/')
         #Generate the loss file/val file name by looking to see if there is a previous one, then creating/running it.
     parser.add_argument("--weight_name_load",type=str,default="")#This would be something that goes infront of w_1.txt. This would be used in saving the weights
     parser.add_argument("--weight_name_save",type=str,default="")

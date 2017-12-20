@@ -69,7 +69,7 @@ def forwardprop(X, weights, biases, num_layers,dropout=False):
 def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
     #data = 'data/snip'
     x_file = data+"_data.csv"
-    y_file = data+"_lables.csv"
+    y_file = data+"_labels.csv"
     print("Train X: " , np.genfromtxt(x_file,delimiter='\t'))
 
     print(np.genfromtxt(x_file,delimiter='\t').shape)
@@ -203,7 +203,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
         print ("Shape:", train_X.shape)
         cum_loss = 0
 
-        while step < n_iter:
+        while epoch_num < numEpochs:
             
             batch_x = train_X[step * n_batch : (step+1) * n_batch]
             batch_y = train_Y[step * n_batch : (step+1) * n_batch]            
@@ -242,21 +242,21 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
         description="Physics Net Training")
-    parser.add_argument("--data",type=str,default='data/snip')
-    parser.add_argument("--reuse_weights",type=str,default='True')
-    parser.add_argument("--output_folder",type=str,default='results/Project_1/')
+    parser.add_argument("--data",type=str,default='data/snip_large')
+    parser.add_argument("--reuse_weights",type=str,default='False')
+    parser.add_argument("--output_folder",type=str,default='results/Project_2/')
         #Generate the loss file/val file name by looking to see if there is a previous one, then creating/running it.
     parser.add_argument("--weight_name_load",type=str,default="")#This would be something that goes infront of w_1.txt. This would be used in saving the weights
     parser.add_argument("--weight_name_save",type=str,default="")
-    parser.add_argument("--n_batch",type=int,default=20)
-    parser.add_argument("--numEpochs",type=int,default=2000)
-    parser.add_argument("--lr_rate",default=.001)
+    parser.add_argument("--n_batch",type=int,default=80)
+    parser.add_argument("--numEpochs",type=int,default=40)
+    parser.add_argument("--lr_rate",default=.01)
     parser.add_argument("--lr_decay_rate",default=.99)
     parser.add_argument("--num_layers",default=2)
-    parser.add_argument("--n_hidden",default=100)
-    parser.add_argument("--percent_val",default=.2)
+    parser.add_argument("--n_hidden",default=30)
+    parser.add_argument("--percent_val",default=.3)
     parser.add_argument("--n_steps",default=100)
-    parser.add_argument("--n_iter",default=100000)
+    parser.add_argument("--n_iter",default=1400000000)
 
     args = parser.parse_args()
     dict = vars(args)

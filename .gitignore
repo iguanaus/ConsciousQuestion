@@ -1,0 +1,6 @@
+*.csv
+*.txt
+data/
+results/
+*.key
+*.npy

@@ -67,67 +67,23 @@ def forwardprop(X, weights, biases, num_layers,dropout=False):
 #c c c c c       5 5 5 5 5
 
 def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
-    #data = 'data/snip'
-    x_file = data+"_data.csv"
-    y_file = data+"_labels.csv"
-    print("Train X: " , np.genfromtxt(x_file,delimiter='\t'))
-
-    print(np.genfromtxt(x_file,delimiter='\t').shape)
-    print(np.genfromtxt(y_file,delimiter='\t').shape)
-    train_X = np.genfromtxt(x_file,delimiter='\t')#[0:20000,:]
-    #print("TX:",train_X)
-    #We don't need this right now. 
-    #train_X = train_X[:,[4,5,6,8,10,12]]
-    
-    print("Train X means")
-    print(train_X.mean(axis=0))
-    print(train_X.mean(axis=0).shape)
-    print("Train X Std")
-    print(train_X.std(axis=0))
-    train_X = np.subtract(train_X,train_X.mean(axis=0))
-    print("Subtracted: " , train_X)
-    train_X = np.divide(train_X,train_X.std(axis=0))
-    print("Divided: " , train_X)
-
-
-
-    #print("TX:",train_X[:,[4,5,6,8,10,12]])
-    
-    train_Y = np.genfromtxt(y_file,delimiter='\t')#[0:20000,:]
-    #B = np.reshape(A, (-1, 2))
-    print("Train Y 3: " , train_Y[0::sampling_rate])
-    train_Y = train_Y#np.reshape(train_Y,(-1,1))
-    print("Train Y 2: " , train_Y)
-
+    train_X = np.genfromtxt(data,delimiter=',')#[0:20000,:]
     lowBar = int(train_X.shape[0]*0.0)
     highBar = int(train_X.shape[0]*1.0)
 
-    print(train_X)
-    my_X = train_X[lowBar:highBar,0:]
-    print("my_X: " , my_X)
+    my_X = train_X[lowBar:highBar,:]
     num_inputs = len(my_X[0])
     rest_my_X = my_X[:-1,:]
-    last_X = np.array([my_X[0]])
+    first_X = np.array([my_X[0]])
     print("Before pre-processing: " , rest_my_X)
-    print("Last row: " , last_X)
-    my_X_offset = np.concatenate((last_X,rest_my_X))
+    print("Last row: " , first_X)
+    my_X_offset = np.concatenate((first_X,rest_my_X))
     #my_X_offset = np.concatenate((my_X[-1],my_X[:-1,:]))
     print("Offset value: " , my_X_offset)
 
     newX = np.reshape(my_X,(-1,sampling_rate,num_inputs))
     newY = np.reshape(my_X_offset,(-1,sampling_rate,num_inputs))
 
-    #newY = np.reshape(my_Y,(-1,100))
-
-    #newY = np.reshape(my_Y,(-1,,train_Y.shape[1])).astype(np.int64)
-    print("My X: " , newX)
-    print("My Y: " , newY)
-    #Now normalize it. #Fine the mean value, subtract it. Find the std of all numbers, and divide by it.
-    #Now, the X 
-    #Now X should be split into groups of 100. We should ignore the first 25%, the last 25%, then take the middle and split it up.
-    #for ele in train_Y:
-    #    print len(ele)
-    #    print ele
     X_train, X_val, y_train, y_val = train_test_split(newX,newY,test_size=percentTest,random_state=random_state)
     return X_train, y_train, X_val, y_val
 
@@ -277,14 +233,14 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
         description="Physics Net Training")
-    parser.add_argument("--data",type=str,default='data/snip_small')
+    parser.add_argument("--data",type=str,default='data/snippet-D_25_standardized.csv')
     parser.add_argument("--reuse_weights",type=str,default='False')
     parser.add_argument("--output_folder",type=str,default='results/Project_2/')
         #Generate the loss file/val file name by looking to see if there is a previous one, then creating/running it.
     parser.add_argument("--weight_name_load",type=str,default="")#This would be something that goes infront of w_1.txt. This would be used in saving the weights
     parser.add_argument("--weight_name_save",type=str,default="")
     parser.add_argument("--n_batch",type=int,default=50)
-    parser.add_argument("--numEpochs",type=int,default=40)
+    parser.add_argument("--numEpochs",type=int,default=5)
     parser.add_argument("--lr_rate",default=.01)
     parser.add_argument("--lr_decay_rate",default=.8)
     parser.add_argument("--num_layers",default=3)

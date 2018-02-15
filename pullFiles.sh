@@ -1,4 +1,5 @@
 #PullFiles
 echo "0.93C467E37DB0" | pbcopy
-scp brain:/home/euler/Iggy/snip_data_large.csv data/snip_data_large.csv
-scp brain:/home/euler/Iggy/snip_lables_large.csv data/snip_lables_large.csv
+scp brain:/home/euler/Iggy/Data/NewData/snippet-25_D_downsampled_20_numpy.npy .
+scp brain:/home/euler/Iggy/Data/NewData/snippet-25_D_downsampled_20.csv .
+scp brain:/home/euler/Iggy/Data/NewData/snippet-25_D.csv .

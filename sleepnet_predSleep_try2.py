@@ -104,24 +104,33 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
 
     print(train_X)
     my_X = train_X[lowBar:highBar,:]
+    rest_my_X = my_X[:-1,:]
+    last_X = np.array([my_X[0]])
+    print("Before pre-processing: " , rest_my_X)
+    print("Last row: " , last_X)
+    my_X_offset = np.concatenate((last_X,rest_my_X))
+    #my_X_offset = np.concatenate((my_X[-1],my_X[:-1,:]))
+    print("Offset value: " , my_X_offset)
+
     newX = np.reshape(my_X,(-1,sampling_rate,train_X.shape[1]))
-    my_Y = train_Y[lowBar:highBar]
-    my_Y = my_Y[0::sampling_rate].astype('int64')
-    #Fixes the 0 indexing
-    my_Y = np.subtract(my_Y,1)
+    newY = np.reshape(my_X_offset,(-1,sampling_rate,train_X.shape[1]))
+
+    
+
+
 
     #newY = np.reshape(my_Y,(-1,100))
 
     #newY = np.reshape(my_Y,(-1,,train_Y.shape[1])).astype(np.int64)
     print("My X: " , newX)
-    print("My Y: " , my_Y)
+    print("My Y: " , newY)
     #Now normalize it. #Fine the mean value, subtract it. Find the std of all numbers, and divide by it.
     #Now, the X 
     #Now X should be split into groups of 100. We should ignore the first 25%, the last 25%, then take the middle and split it up.
     #for ele in train_Y:
     #    print len(ele)
     #    print ele
-    X_train, X_val, y_train, y_val = train_test_split(newX,my_Y,test_size=percentTest,random_state=random_state)
+    X_train, X_val, y_train, y_val = train_test_split(newX,newY,test_size=percentTest,random_state=random_state)
     return X_train, y_train, X_val, y_val
 
 def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_batch,numEpochs,lr_rate,lr_decay_rate,num_layers,n_hidden,percent_val,n_steps,n_iter):
@@ -134,7 +143,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
     x_size = train_X.shape[2]
     print("X Size: " , x_size)
     #n_hidden = 100
-    n_classes = 2
+    n_classes = x_size
     #num_layers = 3
     #y_size = train_Y.shape[2]
     #lr_rate = 0.001
@@ -145,7 +154,8 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
 
     # Symbols
     x = tf.placeholder("float", shape=[None, n_steps,x_size])
-    y = tf.placeholder("int64", shape=[None])
+    y = tf.placeholder("float", shape=[None, n_steps,x_size])
+    #y = tf.placeholder("float", shape=[n_steps,None,x_size])
 
     
     # Weight initializations
@@ -165,14 +175,27 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
             dtype=tf.float32, initializer=tf.constant_initializer(0.01))
 
 
-    hidden_out_list = tf.unstack(hidden_out, axis=1)[-1]
-    final_hidden = tf.matmul(hidden_out_list, V_weights)
+    #hidden_out_list = tf.unstack(hidden_out, axis=1)
+    print(hidden_out)
+    hidden_out_list = tf.unstack(hidden_out, axis=1)
+    print(hidden_out_list)
+
+
+    #final_hidden = tf.matmul(hidden_out_list, V_weights)
+    final_hidden = tf.stack([tf.matmul(i, V_weights) for i in hidden_out_list])
+    print(final_hidden)
+
     output_data = tf.nn.bias_add(final_hidden, V_bias)
+    output_data = tf.reshape(output_data,[-1,n_steps,x_size])
 
 
-    cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=output_data, labels=y))
-    correct_pred = tf.equal(tf.argmax(output_data, 1), y)
-    accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+    print("OutputData:",output_data)
+    print("Y: " , y)
+
+    cost = tf.reduce_mean(tf.square(output_data-y))
+
+    #correct_pred = tf.equal(tf.argmax(output_data, 1), y)
+    #accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
     
     optimizer = tf.train.RMSPropOptimizer(learning_rate=lr_rate, decay=lr_decay_rate).minimize(cost)
     init = tf.global_variables_initializer()
@@ -204,9 +227,14 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
         cum_loss = 0
 
         while epoch_num < numEpochs:
+            #print("\n\n\n\n\n**********\n\n\n")
+            #print(train_X)
             
             batch_x = train_X[step * n_batch : (step+1) * n_batch]
-            batch_y = train_Y[step * n_batch : (step+1) * n_batch]            
+            batch_y = train_Y[step * n_batch : (step+1) * n_batch]
+            #print(batch_x[0])
+            #print(batch_y[0])
+            #sys.exit()
 
             sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
             #epoch_num  = float(n_batch)/55000.0*step
@@ -214,24 +242,28 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
             if step == maxVal:
                 step = 0
                 epoch_num += 1.0
-                acc, val_loss = sess.run([accuracy,cost],feed_dict={x:val_X,y:val_Y})
+                vals, val_loss = sess.run([output_data,cost],feed_dict={x:batch_x,y:batch_y})
+            
+                print("Epoch: " , epoch_num, " loss=", cum_loss, " val loss: " , val_loss)
+                #Write the vals to a file. 
+                #Write batch_y
+                #Write vals
+                #So this is 100 values. 
+                #print(batch_y)
+                np.save('text_orig.npy',batch_x)
+                np.save('text_actu.npy',batch_y)
+                np.save('text_pred.npy',vals)
 
-
-                print("Epoch: " , epoch_num, " loss=", cum_loss, " val loss: " , val_loss, "accuracy", acc)
-                f.write(str(cum_loss)+"," + str(val_loss)+"," + str(acc))
-                f.write("\n")
-                f.flush()
                 cum_loss = 0
                 file_name_file = saver.save(sess,os.path.join(output_folder+"modelFile"))
                 print("Model saved in: " , file_name_file)
                 
             if step % 5 == 0:
                 loss = sess.run(cost,feed_dict={x:batch_x,y:batch_y})
-                acc = sess.run(accuracy,feed_dict={x:batch_x,y:batch_y})
+                #acc = sess.run(accuracy,feed_dict={x:batch_x,y:batch_y})
                 cum_loss += loss
                 print("Epoch: " + str(epoch_num) + " Iter: " + str(step) + ", Minibatch Loss= " + \
-                  "{:.6f}".format(loss) + ", Training Accuracy= " + \
-                  "{:.5f}".format(acc))
+                  "{:.6f}".format(loss) + "")
                 
                 
 

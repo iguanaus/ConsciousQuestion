@@ -15,7 +15,7 @@ from tensorflow.contrib.rnn import BasicLSTMCell, BasicRNNCell, GRUCell
 RANDOM_SEED = 42
 tf.set_random_seed(RANDOM_SEED)
 
-num_decay = 43200
+#num_decay = 43200
 
 def init_weights(shape):
     """ Weight initialization """
@@ -103,7 +103,9 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
     highBar = int(train_X.shape[0]*1.0)
 
     print(train_X)
-    my_X = train_X[lowBar:highBar,:]
+    my_X = train_X[lowBar:highBar,0:]
+    print("my_X: " , my_X)
+    num_inputs = len(my_X[0])
     rest_my_X = my_X[:-1,:]
     last_X = np.array([my_X[0]])
     print("Before pre-processing: " , rest_my_X)
@@ -112,12 +114,8 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
     #my_X_offset = np.concatenate((my_X[-1],my_X[:-1,:]))
     print("Offset value: " , my_X_offset)
 
-    newX = np.reshape(my_X,(-1,sampling_rate,train_X.shape[1]))
-    newY = np.reshape(my_X_offset,(-1,sampling_rate,train_X.shape[1]))
-
-    
-
-
+    newX = np.reshape(my_X,(-1,sampling_rate,num_inputs))
+    newY = np.reshape(my_X_offset,(-1,sampling_rate,num_inputs))
 
     #newY = np.reshape(my_Y,(-1,100))
 
@@ -136,10 +134,9 @@ def get_data(data,percentTest=.2,random_state=42,sampling_rate=100):
 def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_batch,numEpochs,lr_rate,lr_decay_rate,num_layers,n_hidden,percent_val,n_steps,n_iter):
 
     f = open("loss.csv",'w')
-    n_steps = 100
+    #n_steps = 100
 
     train_X, train_Y , val_X, val_Y = get_data(data,percentTest=percent_val,sampling_rate=n_steps)
-
     x_size = train_X.shape[2]
     print("X Size: " , x_size)
     #n_hidden = 100
@@ -157,37 +154,43 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
     y = tf.placeholder("float", shape=[None, n_steps,x_size])
     #y = tf.placeholder("float", shape=[n_steps,None,x_size])
 
+    def length(sequence):
+            used = tf.sign(tf.reduce_max(tf.abs(sequence), 2))
+            length = tf.reduce_sum(used, 1)
+            length = tf.cast(length, tf.int32)
+            return length
     
     # Weight initializations
 
-    cell = BasicLSTMCell(n_hidden, state_is_tuple=True, forget_bias=1)
 
-    cells = tf.contrib.rnn.MultiRNNCell([BasicLSTMCell(n_hidden, state_is_tuple=True, forget_bias =1) for _ in range(num_layers)],state_is_tuple=True)
+    cells = tf.contrib.rnn.MultiRNNCell([BasicLSTMCell(n_hidden, state_is_tuple=True, forget_bias =1,activation=tf.nn.relu) for _ in range(num_layers)],state_is_tuple=True)
 
-    hidden_out, states = tf.nn.dynamic_rnn(cells, x, dtype=tf.float32)
+    hidden_out, states = tf.nn.dynamic_rnn(cells, x,time_major=True,dtype=tf.float32)
 
 
-    V_init_val = np.sqrt(6.)/np.sqrt(200)
+    V_init_val = np.sqrt(6.)/np.sqrt(20)
 
     V_weights = tf.get_variable("V_weights", shape = [n_hidden, n_classes], \
             dtype=tf.float32, initializer=tf.random_uniform_initializer(-V_init_val, V_init_val))
     V_bias = tf.get_variable("V_bias", shape=[n_classes], \
-            dtype=tf.float32, initializer=tf.constant_initializer(0.01))
+            dtype=tf.float32, initializer=tf.constant_initializer(2.0))
 
 
     #hidden_out_list = tf.unstack(hidden_out, axis=1)
+    print("Hidden out:")
     print(hidden_out)
     hidden_out_list = tf.unstack(hidden_out, axis=1)
     print(hidden_out_list)
 
 
     #final_hidden = tf.matmul(hidden_out_list, V_weights)
-    final_hidden = tf.stack([tf.matmul(i, V_weights) for i in hidden_out_list])
+    final_hidden = tf.stack([tf.matmul(i, V_weights) for i in hidden_out_list],axis=1)
     print(final_hidden)
 
     output_data = tf.nn.bias_add(final_hidden, V_bias)
-    output_data = tf.reshape(output_data,[-1,n_steps,x_size])
+    #output_data = tf.reshape(output_data,[-1,n_steps])
 
+    #output_data = hidden_out
 
     print("OutputData:",output_data)
     print("Y: " , y)
@@ -242,7 +245,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
             if step == maxVal:
                 step = 0
                 epoch_num += 1.0
-                vals, val_loss = sess.run([output_data,cost],feed_dict={x:batch_x,y:batch_y})
+                vals, val_loss = sess.run([output_data,cost],feed_dict={x:val_X,y:val_Y})
             
                 print("Epoch: " , epoch_num, " loss=", cum_loss, " val loss: " , val_loss)
                 #Write the vals to a file. 
@@ -250,8 +253,8 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
                 #Write vals
                 #So this is 100 values. 
                 #print(batch_y)
-                np.save('text_orig.npy',batch_x)
-                np.save('text_actu.npy',batch_y)
+                np.save('text_orig.npy',val_X)
+                np.save('text_actu.npy',val_Y)
                 np.save('text_pred.npy',vals)
 
                 cum_loss = 0
@@ -280,14 +283,14 @@ if __name__=="__main__":
         #Generate the loss file/val file name by looking to see if there is a previous one, then creating/running it.
     parser.add_argument("--weight_name_load",type=str,default="")#This would be something that goes infront of w_1.txt. This would be used in saving the weights
     parser.add_argument("--weight_name_save",type=str,default="")
-    parser.add_argument("--n_batch",type=int,default=80)
+    parser.add_argument("--n_batch",type=int,default=50)
     parser.add_argument("--numEpochs",type=int,default=40)
     parser.add_argument("--lr_rate",default=.01)
-    parser.add_argument("--lr_decay_rate",default=.99)
-    parser.add_argument("--num_layers",default=2)
-    parser.add_argument("--n_hidden",default=30)
+    parser.add_argument("--lr_decay_rate",default=.8)
+    parser.add_argument("--num_layers",default=3)
+    parser.add_argument("--n_hidden",default=6)
     parser.add_argument("--percent_val",default=.3)
-    parser.add_argument("--n_steps",default=100)
+    parser.add_argument("--n_steps",default=20) #Sequence length
     parser.add_argument("--n_iter",default=1400000000)
 
     args = parser.parse_args()

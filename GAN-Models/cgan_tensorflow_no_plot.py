@@ -3,9 +3,10 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+#import matplotlib.pyplot as plt
+#import matplotlib.gridspec as gridspec
 import os
+import pickle
 
 
 mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
@@ -118,21 +119,23 @@ for it in range(1000000):
 
         samples = sess.run(G_sample, feed_dict={Z: Z_sample, y:y_sample})
 
-        fig = plot(samples)
-        plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+        #Just save the samples into a file.
+        pickle.dump(samples,open('out/{}.dat'.format(str(i).zfill(3)),'wb'))
+        #fig = plot(samples)
+        #plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
         i += 1
-        plt.close(fig)
+        #plt.close(fig)
 
 
 
     X_mb, y_mb = mnist.train.next_batch(mb_size)
-    print("X minibatch: " , X_mb)
-    print("Y minibatch: " , y_mb)
+    #print("X minibatch: " , X_mb)
+    #print("Y minibatch: " , y_mb)
     #os.exit()
 
     Z_sample = sample_Z(mb_size, Z_dim)
-    print("Z dim: " , Z_dim)
-    print("mb size: " , mb_size)
+    #print("Z dim: " , Z_dim)
+    #print("mb size: " , mb_size)
     _, D_loss_curr = sess.run([D_solver, D_loss], feed_dict={X: X_mb, Z: Z_sample, y:y_mb})
     _, G_loss_curr = sess.run([G_solver, G_loss], feed_dict={Z: Z_sample, y:y_mb})
 

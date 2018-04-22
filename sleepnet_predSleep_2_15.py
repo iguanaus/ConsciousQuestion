@@ -168,7 +168,7 @@ def main(data,reuse_weights,output_folder,weight_name_save,weight_name_load,n_ba
         os.makedirs(output_folder)
     saver = tf.train.Saver()
 
-
+    start_time = time.time()
     with tf.Session(config=tf.ConfigProto(log_device_placement=False,allow_soft_placement=False)) as sess:
         print("Session Created")
     

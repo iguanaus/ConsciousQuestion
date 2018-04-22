@@ -10,13 +10,18 @@ inputFile = 'text_orig.npy'
 
 
 desire = np.load(desireFile)
-print(desire)
+#print(desire[0])
+#print(desire)
 output = np.load(outputFile)
 inputs = np.load(inputFile)
+print("Input first:")
+print(inputs[0,1:6,:])
+print(output[0,1:6,:])
+print(desire[0,1:6,:])
 
-plt.plot(output[0],color='black',label='Predictions') #These are the steps for the first batch file.
-plt.plot(desire[0],color='red',label='True Goal')
-plt.plot(inputs[0],color='blue',label='Input')
+plt.plot(output[0][:],color='black',label='Predictions') #These are the steps for the first batch file.
+plt.plot(desire[0][:],color='red',label='True Goal')
+plt.plot(inputs[0][:],color='blue',label='Input')
 
 
 

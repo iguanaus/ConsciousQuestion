@@ -108,6 +108,8 @@ if not os.path.exists('out/'):
 
 i = 0
 
+j = 0
+
 for it in range(1000000):
     if it % 1000 == 0:
         n_sample = 16
@@ -126,13 +128,27 @@ for it in range(1000000):
 
 
     X_mb, y_mb = mnist.train.next_batch(mb_size)
-    print("X minibatch: " , X_mb)
-    print("Y minibatch: " , y_mb)
+    #print("X minibatch: " , X_mb)
+    #print("Y minibatch: " , y_mb)
+
+    #This line will plot the X.  
+    if it % 1000 == 0:
+        print("J is: " , j)
+        if j > 5:
+            pass
+        else:
+            samples = X_mb
+            fig = plot(samples)
+            plt.savefig('out/ex{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+            j += 1
+            plt.close(fig)
+
+
     #os.exit()
 
     Z_sample = sample_Z(mb_size, Z_dim)
-    print("Z dim: " , Z_dim)
-    print("mb size: " , mb_size)
+    #print("Z dim: " , Z_dim)
+    #print("mb size: " , mb_size)
     _, D_loss_curr = sess.run([D_solver, D_loss], feed_dict={X: X_mb, Z: Z_sample, y:y_mb})
     _, G_loss_curr = sess.run([G_solver, G_loss], feed_dict={Z: Z_sample, y:y_mb})
 

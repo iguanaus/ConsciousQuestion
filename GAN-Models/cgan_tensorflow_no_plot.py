@@ -108,6 +108,7 @@ if not os.path.exists('out/'):
     os.makedirs('out/')
 
 i = 0
+j = 0
 
 for it in range(1000000):
     if it % 1000 == 0:
@@ -129,6 +130,19 @@ for it in range(1000000):
 
 
     X_mb, y_mb = mnist.train.next_batch(mb_size)
+
+    if it % 1000 == 0:
+        print("J is: " , j)
+        if j > 5:
+            pass
+        else:
+            samples = X_mb
+            pickle.dump(samples,open('out/ex{}.dat'.format(str(j).zfill(3)),'wb'))
+            #fig = plot(samples)
+            #plt.savefig('out/ex{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+            j += 1
+            #plt.close(fig)
+
     #print("X minibatch: " , X_mb)
     #print("Y minibatch: " , y_mb)
     #os.exit()

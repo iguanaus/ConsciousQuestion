@@ -6,6 +6,15 @@ import matplotlib.gridspec as gridspec
 import os
 import pickle
 
+model = "MNIST"
+plotDim1 = 28
+plotDim2 = 28
+if model == "MNIST":
+	plotDim1 = 28
+	plotDim2 = 28
+elif model == "brain":
+	plotDim1 = 1500
+	plotDim2 = 10
 
 #This plots a file saved in the out folder.
 
@@ -23,7 +32,9 @@ def convertFile(fileName,outName):
 	        ax.set_xticklabels([])
 	        ax.set_yticklabels([])
 	        ax.set_aspect('equal')
-	        plt.imshow(sample.reshape(28, 28), cmap='Greys_r')
+	        plt.imshow(sample.reshape(plotDim1, plotDim2),aspect='auto', cmap='Greys_r')
+	        #plt.imshow(newVal,aspect='auto',cmap='Greys_r')
+
 
 	    return fig
 

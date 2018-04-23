@@ -1,16 +1,16 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+#import matplotlib.pyplot as plt
+#import matplotlib.gridspec as gridspec
 import os
-
-
-
-
+import pickle
 
 mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
 mb_size = 8
+
+n_sample = mb_size # This should be adjusted. keep this the same if you want them to look comparable. 
+
 Z_dim = 100
 #X_dim = mnist.train.images.shape[1]
 #y_dim = mnist.train.labels.shape[1]
@@ -157,7 +157,7 @@ def plot(samples):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_aspect('equal')
-        #plt.imshow(sample.reshape(28, 28), cmap='Greys_r')
+        plt.imshow(sample.reshape(28, 28), cmap='Greys_r')
 
     return fig
 
@@ -182,6 +182,7 @@ if not os.path.exists('out/'):
     os.makedirs('out/')
 
 i = -1
+j = 0
 
 for it in range(abs_total_iter):
     i += 1
@@ -191,27 +192,39 @@ for it in range(abs_total_iter):
         i = 0
 
     if it % 1000 == 0:
-        n_sample = 16
 
         Z_sample = sample_Z(n_sample, Z_dim)
         y_sample = np.zeros(shape=[n_sample, y_dim])
         print("Y sample: " , y_sample)
         #y_sample[7,:] = 1
-        y_sample[:,1] = 1
+        y_sample[:,0] = 1
         print("new y sample: " , y_sample)
 
         samples = sess.run(G_sample, feed_dict={Z: Z_sample, y:y_sample})
 
-        fig = plot(samples)
-        plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
-        i = 0 
-        plt.close(fig)
+        pickle.dump(samples,open('out/{}.dat'.format(str(j).zfill(3)),'wb'))
+        
+
+        #fig = plot(samples)
+        #plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+        #i = 0 
+        #plt.close(fig)
     #print("I value" , i)
 
     X_mb = train_X[i * mb_size : (i+1) * mb_size]
     y_mb = train_Y[i * mb_size : (i+1) * mb_size]
     #print("Xmb: " , X_mb)
     #print("ymb: "  , y_mb)
+    if it % 1000 == 0:
+        print("J is: " , j)
+        if j > 5:
+            pass
+        else:
+            samples = X_mb
+            pickle.dump(samples,open('out/ex{}.dat'.format(str(j).zfill(3)),'wb'))
+            #fig = plot(samples)
+            #plt.savefig('out/ex{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+            j += 1
 
     #X_mb, y_mb = mnist.train.next_batch(mb_size)
 

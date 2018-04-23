@@ -34,14 +34,14 @@ new_len_x = x_dat.shape[1]*x_dat.shape[2]
 train_X = x_dat.reshape([-1,new_len_x])
 #Note that we need to one-hot this. 
 #print("y dat last: " , y_dat)
-y_dat[-1][0]=2
+#y_dat[-1][0]=2
 #print("y dat last: " , y_dat)
 train_Y = y_dat-1#.reshape([-1,new_len_y])
 n_classes = 2
 train_y_new = np.zeros((y_dat.shape[0],n_classes))
 #b = np.zeros((3, 4))
-#print("Trainy : " , train_Y)
-#print("Train y new: " , train_y_new)
+print("Trainy : " , train_Y)
+print("Train y new: " , train_y_new)
 #print("y data shape: " , y_dat.shape[0])
 train_y_one_d = train_Y.flatten()
 #print("Train y one d: " , train_y_one_d)
@@ -59,7 +59,7 @@ y_dim = train_Y.shape[1]
 #print("y diM: " , y_dim)
 print("Train X Shape: " , train_X.shape)
 print("Train x is: " , train_X)
-
+print("Final trainy : ", train_Y)
 #os.exit()
 
 print("Train Y Shape: " , train_Y.shape)

@@ -224,7 +224,7 @@ for it in range(abs_total_iter):
             pickle.dump(samples,open('out/ex{}.dat'.format(str(j).zfill(3)),'wb'))
             #fig = plot(samples)
             #plt.savefig('out/ex{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
-            j += 1
+        j += 1
 
     #X_mb, y_mb = mnist.train.next_batch(mb_size)
 

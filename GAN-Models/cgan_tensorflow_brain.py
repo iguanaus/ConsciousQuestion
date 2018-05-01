@@ -140,8 +140,8 @@ def generator(z, y):
     print("Y value: " , y)
     inputs = tf.concat(axis=1, values=[z, y])
     G_h1 = tf.nn.relu(tf.matmul(inputs, G_W1) + G_b1)
-    G_log_prob = tf.matmul(G_h1, G_W2) + G_b2
-    G_prob = tf.nn.sigmoid(G_log_prob)
+    G_prob = tf.matmul(G_h1, G_W2) + G_b2
+    #G_prob = tf.nn.sigmoid(G_log_prob)
 
     return G_prob
 

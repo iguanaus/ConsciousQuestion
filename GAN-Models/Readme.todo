@@ -1,0 +1,73 @@
+Todo:
+    Get more data. Both from sleeping and awake.
+
+    Re-run this.
+
+    Make the models more complex.
+
+    Run this.
+
+Protocol to make larger training sets:
+    Go onto brain (. brain)
+    Open up pullDataFile in the iggy folder.
+
+    Add another line in getAllDataForGAN to pull from the snippet.
+    Add this new variable to the numpy concatenates.
+
+    Run the file. 
+      python pullDataFile.py
+
+    pull the Data locally:
+        pullFiles.sh
+    push
+
+
+
+
+
+Protocols:
+
+To plot:
+
+    Run the . pullOutFiles.sh
+      This will pull all the files into the out folder.
+    Set the model type in cgan_gen_plots and adjust the dimensions.
+    Run cgan_gen_plots.py
+      This should then generate the associated png images. 
+
+
+To run on the cluster:
+    Check current gpu's running with nvidia-smi.
+    (optionally)
+        push the data files to the server with '. pushData.sh'
+    Remove previous outputs 
+        rm -rf out
+    do this locally too. 
+
+    git pull
+
+    CUDA_VISIBLE_DEVICES=3 python3 cgan_tensorflow_no_plot.py
+      note this first line is to specify the device.
+
+    nvidia-smi to verify that it is running.
+
+
+Notes:
+    #This will normalize by std/mean along the 1st axis.
+  def normalize_x_data(my_data):
+      print("Normlaizing: " , my_data)
+      print("my data shape: " , my_data.shape)
+      for i in range(0,my_data.shape[0]):
+          df = pd.DataFrame(my_data[i])
+          print("Normalizing this dataframe: " , df)
+
+          normdata = (df - df.mean())/df.std()
+          print("Normed data: " , normdata)
+          break
+
+  normalize_x_data(x_dat)
+
+  os.exit()
+
+
+

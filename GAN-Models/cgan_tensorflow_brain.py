@@ -5,8 +5,9 @@ import numpy as np
 #import matplotlib.gridspec as gridspec
 import os
 import pickle
+import pandas as pd
 
-mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
+#mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
 mb_size = 8
 
 n_sample = mb_size # This should be adjusted. keep this the same if you want them to look comparable. 
@@ -19,11 +20,14 @@ abs_total_iter = 100000
 
 #Load special data
 
-x_dat = np.load('data/gan_data_30sec.npy')
-y_dat = np.load('data/gan-data_30sec_labels.npy')
-p_dat = np.load('data/gan-data_30sec_pat.npy')
+x_dat = np.load('data/norm_gan_data_30sec.npy')
+y_dat = np.load('data/norm_gan-data_30sec_labels.npy')
+p_dat = np.load('data/norm_gan-data_30sec_pat.npy')
 
-#print("X data: " , x_dat)
+print("X data: " , x_dat)
+print("Y data: " , y_dat)
+print("P data: " , p_dat)
+
 #print("X dat: ", x_dat)
 #print("Y dat: " , y_dat)
 #print(y_dat.shape)

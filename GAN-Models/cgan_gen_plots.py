@@ -6,7 +6,7 @@ import matplotlib.gridspec as gridspec
 import os
 import pickle
 
-model = "MNIST"
+model = "brain"
 plotDim1 = 28
 plotDim2 = 28
 if model == "MNIST":
@@ -20,7 +20,7 @@ elif model == "brain":
 
 def convertFile(fileName,outName):
 	samples = pickle.load(open(fileName,"rb"))
-
+	print(samples)
 	def plot(samples):
 	    fig = plt.figure(figsize=(4, 4))
 	    gs = gridspec.GridSpec(4, 4)
